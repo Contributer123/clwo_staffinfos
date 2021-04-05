@@ -1,0 +1,190 @@
+<label for="staff_list">Choose a staff Member:</label>
+
+<select name="staff_list" id="staff_list" onchange="selection_changed();">
+</select>
+<pre id="data_display">
+
+
+</pre>
+<script>
+
+
+async function download(url){
+ 
+  return fetch(url)
+  .then(function(response) {
+    return response.json();
+  })
+  .then(function(response_data) {
+   return response_data;
+    })
+}
+
+async function download_two(url){
+ 
+  return fetch(url)
+  .then(function(response) {
+    return response.json();
+  })
+  .then(function(response_data) {
+   return response_data;
+    })
+}
+let history;
+let staff_list;
+let lut_staff;
+let lut_history;
+let staff_list_target = document.getElementById("staff_list");
+let displ_obj = document.getElementById("data_display");
+
+start();
+
+async function start() {
+	history = await download("https://staff-api.aimless.eu/changes");
+	staff_list = await download_two("https://clwo.eu/community/api/v2/clwo_staff.php?MaxPerPage=1000"); 
+	
+	lut_staff = init_lut_staff(staff_list);
+	lut_history = init_history_staff(history);
+	
+	console.log(history);
+	console.log(staff_list);
+
+
+	for(let i = 0; i < history.data.length; i++)
+	{
+	    if(!lut_staff.hasOwnProperty(history.data[i].accountid))
+		{
+			console.log("no data found for : ")
+			console.log(history.data[i]);
+			continue;
+		}
+		
+		//console.log(lut_staff[history.data[i].accountid]);
+		var node = document.createElement("option"); 
+		
+		node.value = history.data[i].accountid;
+		node.text = lut_staff[history.data[i].accountid].user;
+		staff_list_target.appendChild(node);     	
+	}
+}
+
+function init_lut_staff(l_staff_details)
+{
+   let data = [];
+
+   for(let i = 0; i < l_staff_details.data.length; i++)
+   {
+	  data[l_staff_details.data[i].AccountID] = l_staff_details.data[i];
+   }
+   return data;
+}
+function init_history_staff(l_staff_history)
+{
+   let data = [];
+
+   for(let i = 0; i < l_staff_history.data.length; i++)
+   {
+	  data[l_staff_history.data[i].accountid] = l_staff_history.data[i];
+   }
+   
+   return data;
+}
+
+function add_data(str)
+{
+	displ_obj.innerHTML += "<div>" + str + "</div>";
+}
+function clear_data()
+{
+	displ_obj.innerHTML = "";
+}
+
+
+
+function selection_changed ()
+{
+	let selected_account_id = staff_list_target.options[staff_list_target.selectedIndex].value;
+	let info_staff = lut_staff[parseInt(selected_account_id)];
+	let info_history = lut_history[parseInt(selected_account_id)];
+	clear_data();
+	//print some general data
+	add_data("<span style='color:blue;font-weight:bold;'>User: " + info_staff.user + "</span>");
+	add_data("ServerID: " + info_staff.ServerID)
+	add_data("<span style='color:blue;font-weight:bold;'>Rank: " + info_staff.group_name + "</span>");
+	add_data(" ");
+	// Sort history data
+	
+	info_history.history = info_history.history.sort(function(d1, d2) { return d1.date - d2.date;})
+	// Add Today as "new promotion to the same rank", so we also get todays data
+	// print history of user
+	for(let i = 0; i < info_history.history.length; i++)
+	{
+		let his_data =  info_history.history[i];
+		add_data(dateToYMD(new Date(his_data.date*1000)) + " - " + titleCase(his_data.old_rank) + " -> " + titleCase(his_data.new_rank));
+	}
+	
+	let temp_history = JSON.parse(JSON.stringify(info_history));
+	let latest_rank = temp_history.history.reverse()[0].new_rank;
+	temp_history.history.reverse();
+	
+	temp_history.history.push({ date: parseInt(new Date()/1000), old_rank : latest_rank, new_rank : latest_rank})
+	// calculate total time spend in rank X
+	let total_time_as_rank = [];
+	// We start at i=1, since we do not want to know how long user was "normal"
+	for(let i = 1; i < temp_history.history.length; i++)
+	{	
+		let his_data =  temp_history.history[i];
+		if(!total_time_as_rank.hasOwnProperty(his_data.old_rank))
+			total_time_as_rank[his_data.old_rank] = 0;
+		// we devide by (1000 * 3600 * 24) since we want the time in dates,  3600s->hour, 24h->day
+		total_time_as_rank[his_data.old_rank] += Math.ceil((his_data.date - temp_history.history[i-1].date) / (3600 * 24));
+	}
+	
+	// print total time as rank, if any rank == curr rank, display it green
+	add_data(" ");
+	let dont_display_ranks = ["normal", "default"];
+	for (let rank_name in total_time_as_rank) 
+	{
+		let disp_text;
+		// skip certain ranks
+		if(dont_display_ranks.includes(rank_name))
+			continue;
+			
+		let disp_name = titleCase(rank_name);
+		if(titleCase(rank_name) == titleCase(info_staff.group_name)) 
+		{
+		
+			disp_text = "<span style='color:blue;font-weight:bold;'>" + titleCase(rank_name) + " : " + total_time_as_rank[rank_name] + "</span>";
+		}
+		else
+		{
+			disp_text = titleCase(rank_name) + " : " + total_time_as_rank[rank_name];
+		}		
+		
+		add_data(disp_text);
+	}
+	
+}
+
+// some nice formatting for Date Display
+function dateToYMD(date) {
+    var strArray=['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var d = date.getDate();
+    var m = strArray[date.getMonth()];
+    var y = date.getFullYear();
+    return '' + (d <= 9 ? '0' + d : d) + '-' + m + '-' + y;
+}
+
+// capitalize the first letter of each word in the string
+function titleCase(str) {
+   var splitStr = str.toLowerCase().split(' ');
+   for (var i = 0; i < splitStr.length; i++) {
+       // You do not need to check if i is larger than splitStr length, as your for does that for you
+       // Assign it back to the array
+       splitStr[i] = splitStr[i].charAt(0).toUpperCase() + splitStr[i].substring(1);     
+   }
+   // Directly return the joined string
+   return splitStr.join(' '); 
+}
+
+</script>
