@@ -1,13 +1,19 @@
-<label for="staff_list">Choose a staff Member:</label>
+<h1>TTT Staff</h1>
+<label for="ttt_staff_list">Choose a staff Member:</label>
 
-<select name="staff_list" id="staff_list" onchange="selection_changed();">
+<select name="ttt_staff_list" id="ttt_staff_list" onchange="ttt_selection_changed();">
 </select>
-<pre id="data_display">
+<pre id="ttt_data_display"></pre>
+
+<h1>JB Staff</h1>
+<label for="jb_staff_list">Choose a staff Member:</label>
+
+<select name="jb_staff_list" id="jb_staff_list" onchange="jb_selection_changed();">
+</select>
+<pre id="jb_data_display"></pre>
 
 
-</pre>
 <script>
-
 
 async function download(url){
  
@@ -30,42 +36,71 @@ async function download_two(url){
    return response_data;
     })
 }
-let history;
-let staff_list;
-let lut_staff;
-let lut_history;
-let staff_list_target = document.getElementById("staff_list");
-let displ_obj = document.getElementById("data_display");
+let ttt_history;
+let ttt_staff_list;
+
+let jb_history;
+let jb_staff_list;
+
+let ttt_lut_staff;
+let ttt_lut_history;
+
+let jb_lut_staff;
+let jb_lut_history;
+
+let ttt_staff_list_target = document.getElementById("ttt_staff_list");
+let ttt_displ_obj = document.getElementById("ttt_data_display");
+
+let jb_staff_list_target = document.getElementById("jb_staff_list");
+let jb_displ_obj = document.getElementById("jb_data_display");
 
 start();
 
 async function start() {
-	history = await download("https://staff-api.aimless.eu/changes");
-	staff_list = await download_two("https://clwo.eu/community/api/v2/clwo_staff.php?MaxPerPage=1000"); 
+	ttt_history = await download("https://staff-api.aimless.eu/changes/ttt");
+	ttt_staff_list = await download_two("https://clwo.eu/community/api/v2/clwo_staff.php?ServerID=101&MaxPerPage=1000"); 
 	
-	lut_staff = init_lut_staff(staff_list);
-	lut_history = init_history_staff(history);
+	ttt_lut_staff = init_lut_staff(ttt_staff_list);
+	ttt_lut_history = init_history_staff(ttt_history);
 	
-	console.log(history);
-	console.log(staff_list);
+	jb_history = await download("https://staff-api.aimless.eu/changes/jb");
+	jb_staff_list = await download_two("https://clwo.eu/community/api/v2/clwo_staff.php?ServerID=1&MaxPerPage=1000"); 
+	
+	jb_lut_staff = init_lut_staff(jb_staff_list);
+	jb_lut_history = init_history_staff(jb_history);
+	
 
 
-	for(let i = 0; i < history.data.length; i++)
+	for(let i = 0; i < ttt_history.data.length; i++)
 	{
-	    if(!lut_staff.hasOwnProperty(history.data[i].accountid))
+	    if(!ttt_lut_staff.hasOwnProperty(ttt_history.data[i].accountid))
 		{
 			console.log("no data found for : ")
-			console.log(history.data[i]);
+			console.log(ttt_history.data[i]);
 			continue;
 		}
 		
-		//console.log(lut_staff[history.data[i].accountid]);
 		var node = document.createElement("option"); 
-		
-		node.value = history.data[i].accountid;
-		node.text = lut_staff[history.data[i].accountid].user;
-		staff_list_target.appendChild(node);     	
+		node.value = ttt_history.data[i].accountid;
+		node.text = ttt_lut_staff[ttt_history.data[i].accountid].user;
+		ttt_staff_list_target.appendChild(node);     	
 	}
+	for(let i = 0; i < jb_history.data.length; i++)
+	{
+	    if(!jb_lut_staff.hasOwnProperty(jb_history.data[i].accountid))
+		{
+			console.log("no data found for : ")
+			console.log(jb_history.data[i]);
+			continue;
+		}
+		
+		var node = document.createElement("option"); 
+		node.value = jb_history.data[i].accountid;
+		node.text = jb_lut_staff[jb_history.data[i].accountid].user;
+		jb_staff_list_target.appendChild(node);     	
+	}
+	
+	
 }
 
 function init_lut_staff(l_staff_details)
@@ -90,28 +125,36 @@ function init_history_staff(l_staff_history)
    return data;
 }
 
-function add_data(str)
+function add_data_ttt(str)
 {
-	displ_obj.innerHTML += "<div>" + str + "</div>";
+	ttt_displ_obj.innerHTML += "<div>" + str + "</div>";
 }
-function clear_data()
+function ttt_clear_data()
 {
-	displ_obj.innerHTML = "";
+	ttt_displ_obj.innerHTML = "";
+}
+
+function add_data_jb(str)
+{
+	jb_displ_obj.innerHTML += "<div>" + str + "</div>";
+}
+function jb_clear_data()
+{
+	jb_displ_obj.innerHTML = "";
 }
 
 
-
-function selection_changed ()
+function ttt_selection_changed ()
 {
-	let selected_account_id = staff_list_target.options[staff_list_target.selectedIndex].value;
-	let info_staff = lut_staff[parseInt(selected_account_id)];
-	let info_history = lut_history[parseInt(selected_account_id)];
-	clear_data();
+	let selected_account_id = ttt_staff_list_target.options[ttt_staff_list_target.selectedIndex].value;
+	let info_staff = ttt_lut_staff[parseInt(selected_account_id)];
+	let info_history = ttt_lut_history[parseInt(selected_account_id)];
+	ttt_clear_data();
 	//print some general data
-	add_data("<span style='color:blue;font-weight:bold;'>User: " + info_staff.user + "</span>");
-	add_data("ServerID: " + info_staff.ServerID)
-	add_data("<span style='color:blue;font-weight:bold;'>Rank: " + info_staff.group_name + "</span>");
-	add_data(" ");
+	add_data_ttt("<span style='color:blue;font-weight:bold;'>User: " + info_staff.user + "</span>");
+	add_data_ttt("ServerID: " + info_staff.ServerID)
+	add_data_ttt("<span style='color:blue;font-weight:bold;'>Rank: " + info_staff.group_name + "</span>");
+	add_data_ttt(" ");
 	// Sort history data
 	
 	info_history.history = info_history.history.sort(function(d1, d2) { return d1.date - d2.date;})
@@ -120,7 +163,7 @@ function selection_changed ()
 	for(let i = 0; i < info_history.history.length; i++)
 	{
 		let his_data =  info_history.history[i];
-		add_data(dateToYMD(new Date(his_data.date*1000)) + " - " + titleCase(his_data.old_rank) + " -> " + titleCase(his_data.new_rank));
+		add_data_ttt(dateToYMD(new Date(his_data.date*1000)) + " - " + titleCase(his_data.old_rank) + " -> " + titleCase(his_data.new_rank));
 	}
 	
 	let temp_history = JSON.parse(JSON.stringify(info_history));
@@ -141,7 +184,7 @@ function selection_changed ()
 	}
 	
 	// print total time as rank, if any rank == curr rank, display it green
-	add_data(" ");
+	add_data_ttt(" ");
 	let dont_display_ranks = ["normal", "default"];
 	for (let rank_name in total_time_as_rank) 
 	{
@@ -161,7 +204,7 @@ function selection_changed ()
 			disp_text = titleCase(rank_name) + " : " + total_time_as_rank[rank_name];
 		}		
 		
-		add_data(disp_text);
+		add_data_ttt(disp_text);
 	}
 	
 }
@@ -185,6 +228,75 @@ function titleCase(str) {
    }
    // Directly return the joined string
    return splitStr.join(' '); 
+}
+
+
+
+function jb_selection_changed() 
+{
+	let selected_account_id = jb_staff_list_target.options[jb_staff_list_target.selectedIndex].value;
+	let info_staff = jb_lut_staff[parseInt(selected_account_id)];
+	let info_history = jb_lut_history[parseInt(selected_account_id)];
+	jb_clear_data();
+	//print some general data
+	add_data_jb("<span style='color:blue;font-weight:bold;'>User: " + info_staff.user + "</span>");
+	add_data_jb("ServerID: " + info_staff.ServerID)
+	add_data_jb("<span style='color:blue;font-weight:bold;'>Rank: " + info_staff.group_name + "</span>");
+	add_data_jb(" ");
+	// Sort history data
+	
+	info_history.history = info_history.history.sort(function(d1, d2) { return d1.date - d2.date;})
+	// Add Today as "new promotion to the same rank", so we also get todays data
+	// print history of user
+	for(let i = 0; i < info_history.history.length; i++)
+	{
+		let his_data =  info_history.history[i];
+		add_data_jb(dateToYMD(new Date(his_data.date*1000)) + " - " + titleCase(his_data.old_rank) + " -> " + titleCase(his_data.new_rank));
+	}
+	
+	let temp_history = JSON.parse(JSON.stringify(info_history));
+	let latest_rank = temp_history.history.reverse()[0].new_rank;
+	temp_history.history.reverse();
+	
+	temp_history.history.push({ date: parseInt(new Date()/1000), old_rank : latest_rank, new_rank : latest_rank})
+	// calculate total time spend in rank X
+	let total_time_as_rank = [];
+	// We start at i=1, since we do not want to know how long user was "normal"
+	for(let i = 1; i < temp_history.history.length; i++)
+	{	
+		let his_data =  temp_history.history[i];
+		if(!total_time_as_rank.hasOwnProperty(his_data.old_rank))
+			total_time_as_rank[his_data.old_rank] = 0;
+		// we devide by (1000 * 3600 * 24) since we want the time in dates,  3600s->hour, 24h->day
+		total_time_as_rank[his_data.old_rank] += Math.ceil((his_data.date - temp_history.history[i-1].date) / (3600 * 24));
+	}
+	
+	// print total time as rank, if any rank == curr rank, display it green
+	add_data_jb(" ");
+	let dont_display_ranks = ["normal", "default"];
+	for (let rank_name in total_time_as_rank) 
+	{
+		let disp_text;
+		// skip certain ranks
+		if(dont_display_ranks.includes(rank_name))
+			continue;
+			
+		let disp_name = titleCase(rank_name);
+		if(titleCase(rank_name) == titleCase(info_staff.group_name)) 
+		{
+		
+			disp_text = "<span style='color:blue;font-weight:bold;'>" + titleCase(rank_name) + " : " + total_time_as_rank[rank_name] + "</span>";
+		}
+		else
+		{
+			disp_text = titleCase(rank_name) + " : " + total_time_as_rank[rank_name];
+		}		
+		
+		add_data_jb(disp_text);
+	}
+
+
+
 }
 
 </script>
