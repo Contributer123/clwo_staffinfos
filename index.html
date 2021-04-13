@@ -1,18 +1,26 @@
-<h1>TTT Staff</h1>
-<label for="ttt_staff_list">Choose a staff Member:</label>
+<div style="display: grid; grid-template-columns: 1fr 1fr;"> 
+	<p style="grid-column: 1 / span 2;">Total days as staff is displayed below. Total Staff time does not include playtime as Normal, Default or Guardian. For questions or feature Requests feel free to poke Mr. IAmFat</p>
+	<div>	
+		<h1>Longest Time TTT Staff</h1>
+		<ol id="top_ttt"></ol>
 
-<select name="ttt_staff_list" id="ttt_staff_list" onchange="ttt_selection_changed();">
-</select>
-<pre id="ttt_data_display"></pre>
+		<label for="ttt_staff_list">Choose a staff Member:</label>
 
-<h1>JB Staff</h1>
-<label for="jb_staff_list">Choose a staff Member:</label>
+		<select name="ttt_staff_list" id="ttt_staff_list" onchange="ttt_selection_changed();">
+		</select>
+		<pre id="ttt_data_display"></pre>
+	</div>
+	<div>
+	<h1>Longest Time JB Staff</h1>
+	<ol id="top_jb"></ol>
+	<label for="jb_staff_list">Choose a staff Member:</label>
 
-<select name="jb_staff_list" id="jb_staff_list" onchange="jb_selection_changed();">
-</select>
-<pre id="jb_data_display"></pre>
+	<select name="jb_staff_list" id="jb_staff_list" onchange="jb_selection_changed();">
+	</select>
+	<pre id="jb_data_display"></pre>
 
-
+	</div>
+</div>
 <script>
 
 async function download(url){
@@ -38,9 +46,11 @@ async function download_two(url){
 }
 let ttt_history;
 let ttt_staff_list;
+let ttt_display_data = [];
 
 let jb_history;
 let jb_staff_list;
+let jb_display_data = [];
 
 let ttt_lut_staff;
 let ttt_lut_history;
@@ -50,9 +60,15 @@ let jb_lut_history;
 
 let ttt_staff_list_target = document.getElementById("ttt_staff_list");
 let ttt_displ_obj = document.getElementById("ttt_data_display");
+let ttt_top_obj = document.getElementById("top_ttt");
 
 let jb_staff_list_target = document.getElementById("jb_staff_list");
 let jb_displ_obj = document.getElementById("jb_data_display");
+let jb_top_obj = document.getElementById("top_jb");
+
+
+let show_top_n = 30;
+
 
 start();
 
@@ -70,13 +86,12 @@ async function start() {
 	jb_lut_history = init_history_staff(jb_history);
 	
 
-
 	for(let i = 0; i < ttt_history.data.length; i++)
 	{
 	    if(!ttt_lut_staff.hasOwnProperty(ttt_history.data[i].accountid))
 		{
-			console.log("no data found for : ")
-			console.log(ttt_history.data[i]);
+			//console.log("no data found for : ")
+			//console.log(ttt_history.data[i]);
 			continue;
 		}
 		
@@ -85,12 +100,13 @@ async function start() {
 		node.text = ttt_lut_staff[ttt_history.data[i].accountid].user;
 		ttt_staff_list_target.appendChild(node);     	
 	}
+
 	for(let i = 0; i < jb_history.data.length; i++)
 	{
 	    if(!jb_lut_staff.hasOwnProperty(jb_history.data[i].accountid))
 		{
-			console.log("no data found for : ")
-			console.log(jb_history.data[i]);
+			//console.log("no data found for : ")
+			//console.log(jb_history.data[i]);
 			continue;
 		}
 		
@@ -100,7 +116,47 @@ async function start() {
 		jb_staff_list_target.appendChild(node);     	
 	}
 	
+	// Sort TTT Data
+	sortSelect(ttt_staff_list_target);
+	// Sort JB Data
+	sortSelect(jb_staff_list_target);
+
+	calculate_all_ttt_display_data();
+	calculate_all_jb_display_data();
 	
+	display_top_ttt_data();
+	display_top_jb_data();
+}
+function display_top_ttt_data()
+{
+	let temp_ttt_data = [... ttt_display_data].sort(function(a, b){ return b["Total Playtime"] - a["Total Playtime"]});
+	// display top show_top_n player playtimes
+	for(let i = 0; i < temp_ttt_data.length && i < show_top_n; i++)
+	{
+		ttt_top_obj.innerHTML += "<li>" + temp_ttt_data[i]["User"] + " : " +  temp_ttt_data[i]["Total Playtime"] + " days</li>";
+	}
+
+}
+function display_top_jb_data()
+{
+	let temp_jb_data = [... jb_display_data].sort(function(a, b){ return b["Total Playtime"] - a["Total Playtime"]});
+	// display top show_top_n player playtimes
+	for(let i = 0; i < temp_jb_data.length && i < show_top_n; i++)
+	{
+		jb_top_obj.innerHTML += "<li>" + temp_jb_data[i]["User"] + " : " +  temp_jb_data[i]["Total Playtime"] + " days</li>";
+	}
+
+}
+function calculate_all_ttt_display_data()
+{
+	for(let i = 0; i < ttt_staff_list_target.children.length; i++)
+		ttt_display_data.push(get_ttt_account_id_data(i));
+}
+
+function calculate_all_jb_display_data()
+{
+	for(let i = 0; i < jb_staff_list_target.children.length; i++)
+		jb_display_data.push(get_jb_account_id_data(i));
 }
 
 function init_lut_staff(l_staff_details)
@@ -143,27 +199,27 @@ function jb_clear_data()
 	jb_displ_obj.innerHTML = "";
 }
 
-
-function ttt_selection_changed ()
+function get_ttt_account_id_data(userindex)
 {
-	let selected_account_id = ttt_staff_list_target.options[ttt_staff_list_target.selectedIndex].value;
+	let data = [];
+
+    let selected_account_id = ttt_staff_list_target.options[userindex].value;
 	let info_staff = ttt_lut_staff[parseInt(selected_account_id)];
 	let info_history = ttt_lut_history[parseInt(selected_account_id)];
 	ttt_clear_data();
 	//print some general data
-	add_data_ttt("<span style='color:blue;font-weight:bold;'>User: " + info_staff.user + "</span>");
-	add_data_ttt("ServerID: " + info_staff.ServerID)
-	add_data_ttt("<span style='color:blue;font-weight:bold;'>Rank: " + info_staff.group_name + "</span>");
-	add_data_ttt(" ");
-	// Sort history data
-	
+	data["User"] = info_staff.user;
+	data["ServerID"] = info_staff.ServerID;
+	data["Rank"] = info_staff.group_name;
+
 	info_history.history = info_history.history.sort(function(d1, d2) { return d1.date - d2.date;})
 	// Add Today as "new promotion to the same rank", so we also get todays data
 	// print history of user
+	data["history"] = [];
 	for(let i = 0; i < info_history.history.length; i++)
 	{
 		let his_data =  info_history.history[i];
-		add_data_ttt(dateToYMD(new Date(his_data.date*1000)) + " - " + titleCase(his_data.old_rank) + " -> " + titleCase(his_data.new_rank));
+		data["history"].push({ "date" : dateToYMD(new Date(his_data.date*1000)), "old" : titleCase(his_data.old_rank), "new" : titleCase(his_data.new_rank)});
 	}
 	
 	let temp_history = JSON.parse(JSON.stringify(info_history));
@@ -184,8 +240,9 @@ function ttt_selection_changed ()
 	}
 	
 	// print total time as rank, if any rank == curr rank, display it green
-	add_data_ttt(" ");
 	let dont_display_ranks = ["normal", "default"];
+	let sum_staff_playtime = 0;
+	data["playtimes"] = [];
 	for (let rank_name in total_time_as_rank) 
 	{
 		let disp_text;
@@ -193,20 +250,55 @@ function ttt_selection_changed ()
 		if(dont_display_ranks.includes(rank_name))
 			continue;
 			
+		if(!["guardian"].includes(rank_name))
+			sum_staff_playtime += parseInt(total_time_as_rank[rank_name]);
+			
 		let disp_name = titleCase(rank_name);
 		if(titleCase(rank_name) == titleCase(info_staff.group_name)) 
 		{
 		
-			disp_text = "<span style='color:blue;font-weight:bold;'>" + titleCase(rank_name) + " : " + total_time_as_rank[rank_name] + "</span>";
+			disp_text = "<span style='color:blue;font-weight:bold;'>(Currently) " + titleCase(rank_name) + " : " + total_time_as_rank[rank_name] + "</span>";
 		}
 		else
 		{
-			disp_text = titleCase(rank_name) + " : " + total_time_as_rank[rank_name];
-		}		
-		
-		add_data_ttt(disp_text);
+			disp_text = titleCase(rank_name) + " : " + total_time_as_rank[rank_name] + "";
+		}	
+		data["playtimes"].push({ "Rank" : titleCase(rank_name), "Playtime" : total_time_as_rank[rank_name], "curr_rank" : titleCase(rank_name) == titleCase(info_staff.group_name)});
+
 	}
+	data["Total Playtime"] = sum_staff_playtime;
+	return data;
+
+}
+
+function ttt_selection_changed()
+{
+    ttt_clear_data();
+	let data = ttt_display_data[ttt_staff_list_target.selectedIndex];
+
+	add_data_ttt("<span style='color:blue;font-weight:bold;'>User: " + data["User"] + "</span>");
+	add_data_ttt("ServerID: " + data["ServerID"])
+	add_data_ttt("<span style='color:blue;font-weight:bold;'>Rank: " + data["Rank"] + "</span>");
+	add_data_ttt(" ");
 	
+	for(let i = 0; i < data["history"].length; i++)
+	{
+		add_data_ttt(data["history"][i]["date"] + " - " + data["history"][i]["old"] + " -> " + data["history"][i]["new"]);
+	}
+	add_data_ttt(" ");
+	
+	for(let i = 0; i < data["playtimes"].length; i++)
+	{
+		if(data["playtimes"][i]["curr_rank"] == true)
+		{
+			add_data_ttt("<span style='font-weight:bold;'>(Currently) " + data["playtimes"][i]["Rank"] + " : " + data["playtimes"][i]["Playtime"] + " days</span>");
+		}
+		else
+		{
+			add_data_ttt("<span style=''>" + data["playtimes"][i]["Rank"] + " : " + data["playtimes"][i]["Playtime"] + " days</span>");
+		}
+	}
+	add_data_ttt("<span style='color:blue;font-weight:bold;'>Total Days as Staff : " + data["Total Playtime"] + " days </span>");
 }
 
 // some nice formatting for Date Display
@@ -232,26 +324,57 @@ function titleCase(str) {
 
 
 
-function jb_selection_changed() 
+function jb_selection_changed()
 {
-	let selected_account_id = jb_staff_list_target.options[jb_staff_list_target.selectedIndex].value;
+	jb_clear_data();
+	let data = jb_display_data[jb_staff_list_target.selectedIndex];
+
+	add_data_jb("<span style='color:blue;font-weight:bold;'>User: " + data["User"] + "</span>");
+	add_data_jb("ServerID: " + data["ServerID"])
+	add_data_jb("<span style='color:blue;font-weight:bold;'>Rank: " + data["Rank"] + "</span>");
+	add_data_jb(" ");
+	
+	for(let i = 0; i < data["history"].length; i++)
+	{
+		add_data_jb(data["history"][i]["date"] + " - " + data["history"][i]["old"] + " -> " + data["history"][i]["new"]);
+	}
+	add_data_jb(" ");
+	
+	for(let i = 0; i < data["playtimes"].length; i++)
+	{
+		if(data["playtimes"][i]["curr_rank"] == true)
+		{
+			add_data_jb("<span style='font-weight:bold;'>(Currently) " + data["playtimes"][i]["Rank"] + " : " + data["playtimes"][i]["Playtime"] + " days</span>");
+		}
+		else
+		{
+			add_data_jb("<span style=''>" + data["playtimes"][i]["Rank"] + " : " + data["playtimes"][i]["Playtime"] + " days</span>");
+		}
+	}
+	add_data_jb("<span style='color:blue;font-weight:bold;'>Total Days as Staff : " + data["Total Playtime"] + " days </span>");
+}
+
+function get_jb_account_id_data(userindex)
+{
+	let data = [];
+
+    let selected_account_id = jb_staff_list_target.options[userindex].value;
 	let info_staff = jb_lut_staff[parseInt(selected_account_id)];
 	let info_history = jb_lut_history[parseInt(selected_account_id)];
 	jb_clear_data();
 	//print some general data
-	add_data_jb("<span style='color:blue;font-weight:bold;'>User: " + info_staff.user + "</span>");
-	add_data_jb("ServerID: " + info_staff.ServerID)
-	add_data_jb("<span style='color:blue;font-weight:bold;'>Rank: " + info_staff.group_name + "</span>");
-	add_data_jb(" ");
-	// Sort history data
-	
+	data["User"] = info_staff.user;
+	data["ServerID"] = info_staff.ServerID;
+	data["Rank"] = info_staff.group_name;
+
 	info_history.history = info_history.history.sort(function(d1, d2) { return d1.date - d2.date;})
 	// Add Today as "new promotion to the same rank", so we also get todays data
 	// print history of user
+	data["history"] = [];
 	for(let i = 0; i < info_history.history.length; i++)
 	{
 		let his_data =  info_history.history[i];
-		add_data_jb(dateToYMD(new Date(his_data.date*1000)) + " - " + titleCase(his_data.old_rank) + " -> " + titleCase(his_data.new_rank));
+		data["history"].push({ "date" : dateToYMD(new Date(his_data.date*1000)), "old" : titleCase(his_data.old_rank), "new" : titleCase(his_data.new_rank)});
 	}
 	
 	let temp_history = JSON.parse(JSON.stringify(info_history));
@@ -272,8 +395,9 @@ function jb_selection_changed()
 	}
 	
 	// print total time as rank, if any rank == curr rank, display it green
-	add_data_jb(" ");
 	let dont_display_ranks = ["normal", "default"];
+	let sum_staff_playtime = 0;
+	data["playtimes"] = [];
 	for (let rank_name in total_time_as_rank) 
 	{
 		let disp_text;
@@ -281,22 +405,43 @@ function jb_selection_changed()
 		if(dont_display_ranks.includes(rank_name))
 			continue;
 			
+		if(!["guardian"].includes(rank_name))
+			sum_staff_playtime += parseInt(total_time_as_rank[rank_name]);
+			
 		let disp_name = titleCase(rank_name);
 		if(titleCase(rank_name) == titleCase(info_staff.group_name)) 
 		{
 		
-			disp_text = "<span style='color:blue;font-weight:bold;'>" + titleCase(rank_name) + " : " + total_time_as_rank[rank_name] + "</span>";
+			disp_text = "<span style='color:blue;font-weight:bold;'>(Currently) " + titleCase(rank_name) + " : " + total_time_as_rank[rank_name] + "</span>";
 		}
 		else
 		{
-			disp_text = titleCase(rank_name) + " : " + total_time_as_rank[rank_name];
-		}		
-		
-		add_data_jb(disp_text);
+			disp_text = titleCase(rank_name) + " : " + total_time_as_rank[rank_name] + "";
+		}	
+		data["playtimes"].push({ "Rank" : titleCase(rank_name), "Playtime" : total_time_as_rank[rank_name], "curr_rank" : titleCase(rank_name) == titleCase(info_staff.group_name)});
+
 	}
-
-
+	data["Total Playtime"] = sum_staff_playtime;
+	return data;
 
 }
 
+
+function sortSelect(selElem) {
+    var tmpAry = new Array();
+    for (var i=0;i<selElem.options.length;i++) {
+        tmpAry[i] = new Array();
+        tmpAry[i][0] = selElem.options[i].text;
+        tmpAry[i][1] = selElem.options[i].value;
+    }
+    tmpAry.sort();
+    while (selElem.options.length > 0) {
+        selElem.options[0] = null;
+    }
+    for (var i=0;i<tmpAry.length;i++) {
+        var op = new Option(tmpAry[i][0], tmpAry[i][1]);
+        selElem.options[i] = op;
+    }
+    return;
+}
 </script>
