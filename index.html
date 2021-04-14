@@ -69,6 +69,10 @@ let jb_top_obj = document.getElementById("top_jb");
 
 let show_top_n = 30;
 
+// From AccountID to AccountID
+let merge_user_data = {};
+// Anne 
+merge_user_data["382436527"] = "1103510052";
 
 start();
 
@@ -103,12 +107,22 @@ async function start() {
 
 	for(let i = 0; i < jb_history.data.length; i++)
 	{
-	    if(!jb_lut_staff.hasOwnProperty(jb_history.data[i].accountid))
+		if(merge_user_data.hasOwnProperty(jb_history.data[i].accountid))
+		{
+			let mapped_uid = merge_user_data[jb_history.data[i].accountid];
+			let curr_user_data = jb_history.data.filter(function(v) {return mapped_uid == v.accountid;})[0];
+			let old_user_data = jb_history.data[i];
+			
+			for(let j = 0; j < old_user_data.history.length; j++)
+				curr_user_data.history.push(old_user_data.history[j]);
+		}
+		if(!jb_lut_staff.hasOwnProperty(jb_history.data[i].accountid))
 		{
 			//console.log("no data found for : ")
 			//console.log(jb_history.data[i]);
 			continue;
 		}
+		
 		
 		var node = document.createElement("option"); 
 		node.value = jb_history.data[i].accountid;
@@ -395,7 +409,7 @@ function get_jb_account_id_data(userindex)
 	}
 	
 	// print total time as rank, if any rank == curr rank, display it green
-	let dont_display_ranks = ["normal", "default"];
+	let dont_display_ranks = ["normal", "default", "tks dick suckers ", "gibbys dick suckers"];
 	let sum_staff_playtime = 0;
 	data["playtimes"] = [];
 	for (let rank_name in total_time_as_rank) 
